@@ -74,7 +74,7 @@ func TestHandlerCreatesManagedFirewallPolicy(t *testing.T) {
 	}
 
 	handler := newHandler(t)
-	if _, err := (&tester.Harness{Scheme: scheme}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
+	if _, err := (&tester.Harness{Scheme: scheme, ExpectedDelay: resyncInterval}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
 		t.Fatal(err)
 	}
 
@@ -123,7 +123,7 @@ func TestHandlerLifecycle(t *testing.T) {
 	}
 
 	handler := newHandler(t)
-	if _, err := (&tester.Harness{Scheme: scheme}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
+	if _, err := (&tester.Harness{Scheme: scheme, ExpectedDelay: resyncInterval}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
 		t.Fatal(err)
 	}
 
@@ -133,7 +133,7 @@ func TestHandlerLifecycle(t *testing.T) {
 	}
 
 	policy.Spec.EgressDomains = []string{"new.example.com"}
-	if _, err := (&tester.Harness{Scheme: scheme}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
+	if _, err := (&tester.Harness{Scheme: scheme, ExpectedDelay: resyncInterval}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
 		t.Fatal(err)
 	}
 	if err := handler.RuntimeClient.Get(t.Context(), kclient.ObjectKey{Namespace: "obot-mcp", Name: "obot-policy-a-fw"}, &created); err != nil {
@@ -144,7 +144,7 @@ func TestHandlerLifecycle(t *testing.T) {
 	}
 
 	policy.Spec.MCPServerName = "server-b"
-	if _, err := (&tester.Harness{Scheme: scheme}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
+	if _, err := (&tester.Harness{Scheme: scheme, ExpectedDelay: resyncInterval}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
 		t.Fatal(err)
 	}
 	if err := handler.RuntimeClient.Get(t.Context(), kclient.ObjectKey{Namespace: "obot-mcp", Name: "obot-policy-a-fw"}, &created); err != nil {
@@ -156,7 +156,7 @@ func TestHandlerLifecycle(t *testing.T) {
 
 	policy.Spec.EgressDomains = nil
 	policy.Spec.DenyAllEgress = false
-	if _, err := (&tester.Harness{Scheme: scheme}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
+	if _, err := (&tester.Harness{Scheme: scheme, ExpectedDelay: resyncInterval}).InvokeFunc(t, policy, handler.Reconcile); err != nil {
 		t.Fatal(err)
 	}
 	if err := handler.RuntimeClient.Get(t.Context(), kclient.ObjectKey{Namespace: "obot-mcp", Name: "obot-policy-a-fw"}, &created); err != nil {
