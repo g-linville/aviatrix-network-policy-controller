@@ -2,6 +2,7 @@ package controller
 
 import (
 	"fmt"
+	"time"
 
 	aviatrixv1alpha1 "github.com/obot-platform/aviatrix-network-policy-controller/pkg/apis/networking.aviatrix.com/v1alpha1"
 	obotv1 "github.com/obot-platform/aviatrix-network-policy-controller/pkg/apis/obot.obot.ai/v1"
@@ -14,12 +15,18 @@ import (
 
 var controllerLog = ctrlruntimelog.Log.WithName("controller")
 
+// resyncInterval is how often to re-reconcile each MCPNetworkPolicy even if no
+// watch event is received. Obot's internal storage API does not reliably emit
+// watch events for UPDATE operations, so without this the controller would only
+// pick up domain changes on a full re-list (e.g. controller restart).
+const resyncInterval = 30 * time.Second
+
 type Handler struct {
 	RuntimeClient    kclient.Client
 	RuntimeNamespace string
 }
 
-func (h *Handler) Reconcile(req router.Request, _ router.Response) error {
+func (h *Handler) Reconcile(req router.Request, resp router.Response) error {
 	log := controllerLog.WithValues(
 		"sourceNamespace", req.Namespace,
 		"sourceName", req.Name,
@@ -56,6 +63,10 @@ func (h *Handler) Reconcile(req router.Request, _ router.Response) error {
 		log.Error(err, "failed to apply managed FirewallPolicy")
 		return err
 	}
+
+	// Re-trigger after resyncInterval to pick up any domain changes that were
+	// written to Obot's storage but whose watch event was not delivered.
+	resp.RetryAfter(resyncInterval)
 	return nil
 }
 
